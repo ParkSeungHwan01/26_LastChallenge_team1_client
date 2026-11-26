@@ -24,22 +24,28 @@ export function MySubmissionRow({ submission, onClick }: MySubmissionRowProps) {
       <span className="flex flex-1 flex-col gap-1">
         <span className="flex items-center gap-2">
           <span className="text-lg font-bold tracking-[-0.36px]">{submission.title}</span>
+          {submission.postStatus === 'OPEN' && typeof submission.dDay === 'number' && (
+            <span className="rounded bg-chip px-2.5 py-1 text-xs font-semibold text-brand">
+              D-{submission.dDay}
+            </span>
+          )}
           {submission.postStatus === 'CLOSED' && (
             <span className="rounded bg-neutral-500 px-2.5 py-1 text-xs font-medium text-white">
               마감
             </span>
           )}
         </span>
+        <span className="text-[13px] text-ink-soft">{submission.summary}</span>
       </span>
       <span className="w-40 text-[13px] text-ink">{toDotDate(submission.submittedAt)}</span>
       <span className="w-24 pr-4 text-right">
         <span
           className={cn(
             'rounded px-2.5 py-1 text-xs font-medium',
-            submission.status === 'COMPLETED' ? 'bg-brand text-white' : 'bg-chip-soft text-brand',
+            submission.myStatus === 'COMPLETED' ? 'bg-brand text-white' : 'bg-chip-soft text-brand',
           )}
         >
-          {submission.status === 'COMPLETED' ? '참여 완료' : '제출됨'}
+          {submission.myStatus === 'COMPLETED' ? '참여 완료' : '제출됨'}
         </span>
       </span>
     </button>

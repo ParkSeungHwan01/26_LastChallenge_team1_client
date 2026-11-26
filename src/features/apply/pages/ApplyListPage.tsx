@@ -73,7 +73,7 @@ export default function ApplyListPage() {
           ) : (
             mySubmissions.map((submission) => (
               <MySubmissionRow
-                key={submission.submissionId}
+                key={submission.postId}
                 submission={submission}
                 onClick={() => navigate(`/apply/${submission.postId}`)}
               />
