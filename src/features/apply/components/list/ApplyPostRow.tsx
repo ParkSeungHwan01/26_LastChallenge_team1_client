@@ -1,25 +1,24 @@
-import { cn } from '@/lib/utils';
-import type { ApplyPost } from '../../types';
+import { toDotDate } from '@/lib/date';
+import type { ApplyPostListItem, ApplyPostType } from '../../types';
 
-const TYPE_LABEL: Record<ApplyPost['type'], string> = {
+const TYPE_LABEL: Record<ApplyPostType, string> = {
   STUDY: '스터디',
   EVENT: '행사',
 };
 
 interface ApplyPostRowProps {
-  post: ApplyPost;
-  isMyTab: boolean;
+  post: ApplyPostListItem;
   onClick: () => void;
 }
 
-export function ApplyPostRow({ post, isMyTab, onClick }: ApplyPostRowProps) {
+export function ApplyPostRow({ post, onClick }: ApplyPostRowProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex w-full items-center gap-4 border-b border-hairline py-6 text-left"
     >
-      <span className="w-9 pl-4 text-sm text-ink-soft">{post.id}</span>
+      <span className="w-16 pl-4 text-sm text-ink-soft">{post.no}</span>
       <span className="w-17 text-[13px] text-ink-soft">{TYPE_LABEL[post.type]}</span>
       <span className="flex flex-1 flex-col gap-1">
         <span className="flex items-center gap-2">
@@ -29,39 +28,20 @@ export function ApplyPostRow({ post, isMyTab, onClick }: ApplyPostRowProps) {
               D-{post.dDay}
             </span>
           )}
-          {isMyTab && post.status === 'CLOSED' && (
-            <span className="rounded bg-neutral-500 px-2.5 py-1 text-xs font-medium text-white">
-              마감
-            </span>
-          )}
         </span>
-        <span className="text-[13px] text-ink-soft">{post.description}</span>
+        <span className="text-[13px] text-ink-soft">{post.summary}</span>
       </span>
       <span className="w-40 text-[13px] text-ink">
-        {isMyTab ? post.myApplication?.appliedAt : `${post.periodStart} – ${post.periodEnd}`}
+        {toDotDate(post.startDate)} – {toDotDate(post.endDate)}
       </span>
       <span className="w-24 pr-4 text-right">
-        {isMyTab ? (
-          <span
-            className={cn(
-              'rounded px-2.5 py-1 text-xs font-medium',
-              post.myApplication?.status === 'COMPLETED'
-                ? 'bg-brand text-white'
-                : 'bg-chip-soft text-brand',
-            )}
-          >
-            {post.myApplication?.status === 'COMPLETED' ? '참여 완료' : '제출됨'}
-          </span>
-        ) : (
-          <span
-            className={cn(
-              'rounded px-2.5 py-1 text-xs font-medium text-white',
-              post.status === 'OPEN' ? 'bg-brand' : 'bg-neutral-500',
-            )}
-          >
-            {post.status === 'OPEN' ? '모집 중' : '마감'}
-          </span>
-        )}
+        <span
+          className={`rounded px-2.5 py-1 text-xs font-medium text-white ${
+            post.status === 'OPEN' ? 'bg-brand' : 'bg-neutral-500'
+          }`}
+        >
+          {post.status === 'OPEN' ? '모집 중' : '마감'}
+        </span>
       </span>
     </button>
   );

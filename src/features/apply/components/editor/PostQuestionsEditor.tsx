@@ -27,17 +27,19 @@ export function PostQuestionsEditor({
 
       {questions.map((question, index) => (
         <QuestionEditorCard
-          key={question.id}
+          key={question.draftKey}
           question={question}
           index={index}
           isFirst={index === 0}
           isLast={index === questions.length - 1}
           onMove={(direction) => moveQuestion(index, direction)}
-          onUpdate={(patch) => updateQuestion(question.id, patch)}
-          onRemove={() => removeQuestion(question.id)}
-          onUpdateOption={(optionIndex, value) => updateOption(question.id, optionIndex, value)}
-          onAddOption={() => addOption(question.id)}
-          onRemoveOption={(optionIndex) => removeOption(question.id, optionIndex)}
+          onUpdate={(patch) => updateQuestion(question.draftKey, patch)}
+          onRemove={() => removeQuestion(question.draftKey)}
+          onUpdateOption={(optionIndex, value) =>
+            updateOption(question.draftKey, optionIndex, value)
+          }
+          onAddOption={() => addOption(question.draftKey)}
+          onRemoveOption={(optionIndex) => removeOption(question.draftKey, optionIndex)}
         />
       ))}
 

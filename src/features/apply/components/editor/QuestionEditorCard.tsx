@@ -88,7 +88,7 @@ export function QuestionEditorCard({
         {question.uiType === 'CHOICE' && (
           <div className="flex flex-col gap-2">
             {question.options.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center gap-2.5">
+              <div key={option.id ?? optionIndex} className="flex items-center gap-2.5">
                 <span
                   className={cn(
                     'size-4 shrink-0 border border-control-outline',
@@ -96,7 +96,7 @@ export function QuestionEditorCard({
                   )}
                 />
                 <Input
-                  value={option}
+                  value={option.content}
                   onChange={(event) => onUpdateOption(optionIndex, event.target.value)}
                   placeholder={`선택지 ${optionIndex + 1}`}
                   className="h-10 flex-1"

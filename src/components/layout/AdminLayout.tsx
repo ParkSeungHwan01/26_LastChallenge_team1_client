@@ -49,7 +49,7 @@ export function AdminLayout() {
       <main className="pt-14">
         <SidebarProvider>
           <Sidebar>
-            <SidebarContent>
+            <SidebarContent className="sm:pt-14">
               {SIDE_ITEMS.map(({ group, items }) => (
                 <SidebarGroup key={group}>
                   <SidebarGroupLabel>{group}</SidebarGroupLabel>

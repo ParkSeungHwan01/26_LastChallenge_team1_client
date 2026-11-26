@@ -6,7 +6,7 @@ interface SubmitSuccessDialogProps {
   postTitle: string;
   onOpenChange: (open: boolean) => void;
   onGoToList: () => void;
-  onGoToMyApplications: () => void;
+  onGoToDetail: () => void;
 }
 
 export function SubmitSuccessDialog({
@@ -14,7 +14,7 @@ export function SubmitSuccessDialog({
   postTitle,
   onOpenChange,
   onGoToList,
-  onGoToMyApplications,
+  onGoToDetail,
 }: SubmitSuccessDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -32,7 +32,7 @@ export function SubmitSuccessDialog({
         <p className="mt-3 text-sm text-ink-soft">
           제출한 신청서와 진행 상태는
           <br />
-          프로필의 내 신청 내역에서 확인할 수 있어요.
+          신청글 상세 화면에서 확인할 수 있어요.
         </p>
         <div className="mt-8 flex w-full gap-2">
           <button
@@ -44,10 +44,10 @@ export function SubmitSuccessDialog({
           </button>
           <button
             type="button"
-            onClick={onGoToMyApplications}
+            onClick={onGoToDetail}
             className="h-[52px] flex-1 rounded bg-brand text-[15px] font-bold text-white"
           >
-            내 신청 내역 보기
+            신청글 보기
           </button>
         </div>
       </DialogContent>

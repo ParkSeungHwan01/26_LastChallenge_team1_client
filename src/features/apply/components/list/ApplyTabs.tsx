@@ -8,7 +8,7 @@ interface ApplyTabsProps {
 
 export function ApplyTabs({ isMyTab, showMyTab, onChange }: ApplyTabsProps) {
   return (
-    <div className="relative flex h-[50px] items-end gap-6 border-b border-hairline">
+    <div className="relative flex h-[50px] items-end gap-6">
       <button
         type="button"
         onClick={() => onChange('all')}

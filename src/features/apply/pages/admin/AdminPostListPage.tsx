@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ChevronDown } from 'lucide-react';
 import {
-  useApplyPostsQuery,
+  useAdminApplyPostsQuery,
   useCloseApplyPostMutation,
   useRemoveApplyPostMutation,
 } from '../../api/applyPosts.queries';
@@ -20,38 +20,56 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ApiError } from '@/lib/http';
 import { cn } from '@/lib/utils';
-import type { ApplyPost, ApplyPostType } from '../../types';
+import type { AdminPostListItem, ApplyPostStatus, ApplyPostType } from '../../types';
 
 const TYPE_LABEL: Record<ApplyPostType, string> = { STUDY: '스터디', EVENT: '행사' };
-type StatusTab = 'ALL' | 'OPEN' | 'CLOSED';
+type StatusTab = 'ALL' | ApplyPostStatus;
 
 export default function AdminPostListPage() {
   const navigate = useNavigate();
-  const { data: posts = [] } = useApplyPostsQuery();
-  const closePostMutation = useCloseApplyPostMutation();
-  const removePostMutation = useRemoveApplyPostMutation();
   const [statusTab, setStatusTab] = useState<StatusTab>('ALL');
   const [typeFilter, setTypeFilter] = useState<'ALL' | ApplyPostType>('ALL');
   const [keyword, setKeyword] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<ApplyPost | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminPostListItem | null>(null);
 
-  const filtered = useMemo(() => {
-    return posts
-      .filter((post) => statusTab === 'ALL' || post.status === statusTab)
-      .filter((post) => typeFilter === 'ALL' || post.type === typeFilter)
-      .filter((post) => post.title.toLowerCase().includes(keyword.trim().toLowerCase()));
-  }, [posts, statusTab, typeFilter, keyword]);
+  const { data } = useAdminApplyPostsQuery({
+    status: statusTab === 'ALL' ? undefined : statusTab,
+    type: typeFilter === 'ALL' ? undefined : typeFilter,
+    keyword: keyword.trim() || undefined,
+    size: 50,
+  });
+  const posts = data?.content ?? [];
+
+  const { data: allForCounts } = useAdminApplyPostsQuery({ size: 1000 });
+  const openCount = allForCounts?.content.filter((p) => p.status === 'OPEN').length ?? 0;
+  const closedCount = allForCounts?.content.filter((p) => p.status === 'CLOSED').length ?? 0;
+
+  const closePostMutation = useCloseApplyPostMutation();
+  const removePostMutation = useRemoveApplyPostMutation();
 
   function handleDeleteConfirm() {
     if (!deleteTarget) return;
-    if (deleteTarget.applicantCount > 0) {
-      closePostMutation.mutate(deleteTarget.id);
-      toast.success('제출자가 있어 삭제 대신 마감 처리했어요');
-    } else {
-      removePostMutation.mutate(deleteTarget.id);
-    }
+    const target = deleteTarget;
     setDeleteTarget(null);
+
+    if (target.submissionCount > 0) {
+      closePostMutation.mutate(target.id);
+      toast.success('제출자가 있어 삭제 대신 마감 처리했어요');
+      return;
+    }
+
+    removePostMutation.mutate(target.id, {
+      onError: (error) => {
+        if (error instanceof ApiError && error.errorCode === 'POST_HAS_SUBMISSIONS') {
+          closePostMutation.mutate(target.id);
+          toast.success('제출자가 있어 삭제 대신 마감 처리했어요');
+        } else {
+          toast.error('삭제에 실패했어요');
+        }
+      },
+    });
   }
 
   return (
@@ -66,18 +84,18 @@ export default function AdminPostListPage() {
             placeholder="검색어를 입력해주세요."
             className="h-10 flex-1"
           />
-          <Button variant="wink" onClick={() => navigate('/admin/apply-posts/new')}>
+          <Button variant="wink" className="h-10" onClick={() => navigate('/admin/apply-posts/new')}>
             + 신청글 작성
           </Button>
         </div>
 
-        <div className="mt-6 flex items-end justify-between border-b border-border">
+        <div className="mt-6 flex items-end justify-between border-b border-hairline">
           <div className="flex gap-6">
             {(
               [
-                ['ALL', `전체 ${posts.length}`],
-                ['OPEN', `모집중 ${posts.filter((p) => p.status === 'OPEN').length}`],
-                ['CLOSED', `마감 ${posts.filter((p) => p.status === 'CLOSED').length}`],
+                ['ALL', `전체 ${(allForCounts?.content.length ?? 0)}`],
+                ['OPEN', `모집중 ${openCount}`],
+                ['CLOSED', `마감 ${closedCount}`],
               ] as [StatusTab, string][]
             ).map(([tab, label]) => (
               <button
@@ -130,8 +148,8 @@ export default function AdminPostListPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length > 0 ? (
-              filtered.map((post) => (
+            {posts.length > 0 ? (
+              posts.map((post) => (
                 <AdminPostTableRow
                   key={post.id}
                   post={post}

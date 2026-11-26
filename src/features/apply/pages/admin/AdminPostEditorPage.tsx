@@ -2,36 +2,60 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  useAddApplyPostMutation,
-  useApplyPost,
+  useAdminApplyPostQuery,
+  useCreateApplyPostMutation,
   useUpdateApplyPostMutation,
 } from '../../api/applyPosts.queries';
 import { AdminBreadcrumb } from '../../components/AdminBreadcrumb';
-import { draftToQuestion } from '../../components/editor/questionDraft';
+import { draftToCreateQuestion, draftToUpdateQuestion } from '../../components/editor/questionDraft';
 import { PostBasicInfoForm } from '../../components/editor/PostBasicInfoForm';
 import { PostPreviewDialog } from '../../components/editor/PostPreviewDialog';
 import { PostQuestionsEditor } from '../../components/editor/PostQuestionsEditor';
 import { useQuestionDrafts } from '../../hooks/useQuestionDrafts';
 import { Button } from '@/components/ui/button';
-import type { ApplyPostType } from '../../types';
+import { ApiError } from '@/lib/http';
+import type { AdminPostDetail, ApplyPostType } from '../../types';
 
 export default function AdminPostEditorPage() {
   const { postId } = useParams();
+  const isEdit = Boolean(postId);
+  const existingPostId = Number(postId);
+
+  const { data: existingPost, isLoading } = useAdminApplyPostQuery(existingPostId, {
+    enabled: isEdit,
+  });
+
+  if (isEdit && isLoading) {
+    return <div className="p-10">불러오는 중이에요...</div>;
+  }
+
+  return (
+    <PostEditorForm
+      key={existingPost?.id ?? 'new'}
+      isEdit={isEdit}
+      existingPost={existingPost}
+    />
+  );
+}
+
+function PostEditorForm({
+  isEdit,
+  existingPost,
+}: {
+  isEdit: boolean;
+  existingPost: AdminPostDetail | undefined;
+}) {
   const navigate = useNavigate();
-  const existingPost = useApplyPost(Number(postId));
-  const isEdit = Boolean(existingPost);
-  const addPostMutation = useAddApplyPostMutation();
+  const createPostMutation = useCreateApplyPostMutation();
   const updatePostMutation = useUpdateApplyPostMutation();
 
   const [category, setCategory] = useState<ApplyPostType>(existingPost?.type ?? 'STUDY');
   const [title, setTitle] = useState(existingPost?.title ?? '');
-  const [summary, setSummary] = useState(existingPost?.description ?? '');
-  const [periodStart, setPeriodStart] = useState(
-    existingPost?.periodStart.replaceAll('.', '-') ?? '',
-  );
-  const [periodEnd, setPeriodEnd] = useState(existingPost?.periodEnd.replaceAll('.', '-') ?? '');
-  const [body, setBody] = useState(existingPost?.detail.intro ?? '');
-  const questionDrafts = useQuestionDrafts(existingPost?.detail.questions);
+  const [summary, setSummary] = useState(existingPost?.summary ?? '');
+  const [periodStart, setPeriodStart] = useState(existingPost?.startDate ?? '');
+  const [periodEnd, setPeriodEnd] = useState(existingPost?.endDate ?? '');
+  const [body, setBody] = useState(existingPost?.content ?? '');
+  const questionDrafts = useQuestionDrafts(existingPost?.questions);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   function handlePublish() {
@@ -47,50 +71,53 @@ export default function AdminPostEditorPage() {
       toast.error('신청 종료일이 시작일보다 빠를 수 없어요');
       return;
     }
-
-    const formattedStart = periodStart.replaceAll('-', '.');
-    const formattedEnd = periodEnd.replaceAll('-', '.');
-    const formQuestions = questionDrafts.questions.map(draftToQuestion);
-
-    if (isEdit && existingPost) {
-      updatePostMutation.mutate({
-        id: existingPost.id,
-        patch: {
-          type: category,
-          title: title.trim(),
-          description: summary.trim(),
-          periodStart: formattedStart,
-          periodEnd: formattedEnd,
-          detail: {
-            ...existingPost.detail,
-            intro: body,
-            questions: formQuestions,
-          },
-        },
-      });
-    } else {
-      addPostMutation.mutate({
-        type: category,
-        status: 'OPEN',
-        title: title.trim(),
-        description: summary.trim(),
-        periodStart: formattedStart,
-        periodEnd: formattedEnd,
-        applicantCount: 0,
-        detail: {
-          author: 'WINK 운영진',
-          createdAt: `${new Date().toISOString().slice(0, 10).replaceAll('-', '.')} 등록`,
-          intro: body,
-          process: [],
-          recommend: [],
-          questions: formQuestions,
-        },
-      });
+    if (!body.trim()) {
+      toast.error('본문을 입력해주세요');
+      return;
     }
 
-    toast.success(isEdit ? '신청글이 수정되었어요' : '신청글이 등록되었어요');
-    navigate('/admin/apply-posts');
+    function handleSuccess() {
+      toast.success(isEdit ? '신청글이 수정되었어요' : '신청글이 등록되었어요');
+      navigate('/admin/apply-posts');
+    }
+
+    function handleError(error: unknown) {
+      toast.error(error instanceof ApiError ? error.message : '저장에 실패했어요');
+    }
+
+    if (isEdit && existingPost) {
+      updatePostMutation.mutate(
+        {
+          postId: existingPost.id,
+          request: {
+            type: existingPost.type,
+            title: title.trim(),
+            summary: summary.trim(),
+            startDate: periodStart,
+            endDate: periodEnd,
+            content: body,
+            questions: questionDrafts.questions.map(draftToUpdateQuestion),
+          },
+        },
+        { onSuccess: handleSuccess, onError: handleError },
+      );
+    } else {
+      createPostMutation.mutate(
+        {
+          type: category,
+          title: title.trim(),
+          summary: summary.trim(),
+          startDate: periodStart,
+          endDate: periodEnd,
+          content: body,
+          questions: questionDrafts.questions.map(draftToCreateQuestion),
+        },
+        { onSuccess: handleSuccess, onError: handleError },
+      );
+    }
   }
+
+  const isSaving = createPostMutation.isPending || updatePostMutation.isPending;
 
   return (
     <>
@@ -102,6 +129,7 @@ export default function AdminPostEditorPage() {
 
           <PostBasicInfoForm
             category={category}
+            categoryLocked={isEdit}
             onCategoryChange={setCategory}
             title={title}
             onTitleChange={setTitle}
@@ -128,7 +156,7 @@ export default function AdminPostEditorPage() {
             <Button variant="outline" className="h-13 w-30" onClick={() => setPreviewOpen(true)}>
               미리보기
             </Button>
-            <Button variant="wink" className="h-13 w-40" onClick={handlePublish}>
+            <Button variant="wink" className="h-13 w-40" disabled={isSaving} onClick={handlePublish}>
               게시하기
             </Button>
           </div>

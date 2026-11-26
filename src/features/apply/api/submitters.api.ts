@@ -1,29 +1,38 @@
-import { INITIAL_SUBMITTERS_BY_POST } from './mockData';
-import type { Submitter } from '../types';
+import { http, type ApiResponse } from '@/lib/http';
+import type { Applicants, StatusChangeResponse, SubmissionDetail, SubmissionStatus } from '../types';
 
-// 실제 백엔드가 준비되면 이 파일의 구현부만 axios 호출로 바꾸면 됩니다.
-const submittersByPost: Record<number, Submitter[]> = Object.fromEntries(
-  Object.entries(INITIAL_SUBMITTERS_BY_POST).map(([key, value]) => [
-    key,
-    value.map((submitter) => ({ ...submitter })),
-  ]),
-);
-
-function delay<T>(value: T, ms = 150): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-export function fetchSubmitters(postId: number): Promise<Submitter[]> {
-  return delay(submittersByPost[postId] ?? []);
-}
-
-export function markSubmitterCompleted(
+// FORM-03 제출자 목록
+export async function fetchSubmitters(
   postId: number,
-  submitterId: number,
-): Promise<Submitter[]> {
-  const list = submittersByPost[postId] ?? [];
-  submittersByPost[postId] = list.map((submitter) =>
-    submitter.id === submitterId ? { ...submitter, status: 'COMPLETED' } : submitter,
+  params: { status?: SubmissionStatus; page?: number; size?: number },
+): Promise<Applicants> {
+  const { data } = await http.get<ApiResponse<Applicants>>(
+    `/api/admin/posts/${postId}/submissions`,
+    { params },
   );
-  return delay(submittersByPost[postId]);
+  return data.data;
+}
+
+// FORM-06 제출 상세
+export async function fetchSubmissionDetail(
+  postId: number,
+  submissionId: number,
+): Promise<SubmissionDetail> {
+  const { data } = await http.get<ApiResponse<SubmissionDetail>>(
+    `/api/admin/posts/${postId}/submissions/${submissionId}`,
+  );
+  return data.data;
+}
+
+// FORM-04 참여 완료 처리 · 되돌리기
+export async function changeSubmissionStatus(
+  postId: number,
+  submissionId: number,
+  status: SubmissionStatus,
+): Promise<StatusChangeResponse> {
+  const { data } = await http.patch<ApiResponse<StatusChangeResponse>>(
+    `/api/admin/posts/${postId}/submissions/${submissionId}/status`,
+    { status },
+  );
+  return data.data;
 }

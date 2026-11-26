@@ -1,45 +1,31 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useApplyPost } from '../../api/applyPosts.queries';
-import {
-  useMarkSubmitterCompletedMutation,
-  useSubmittersQuery,
-} from '../../api/submitters.queries';
+import { useSubmittersQuery } from '../../api/submitters.queries';
 import { AdminBreadcrumb } from '../../components/AdminBreadcrumb';
 import { SubmissionStats } from '../../components/admin/SubmissionStats';
 import { SubmitterDetailDialog } from '../../components/admin/SubmitterDetailDialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toDotDate } from '@/lib/date';
 import { cn } from '@/lib/utils';
-import type { Submitter } from '../../types';
+import type { SubmissionStatus } from '../../types';
 
-type StatusTab = 'ALL' | 'SUBMITTED' | 'COMPLETED';
+type StatusTab = 'ALL' | SubmissionStatus;
 
 export default function AdminSubmissionsPage() {
   const { postId } = useParams();
-  const post = useApplyPost(Number(postId));
-  const { data: submitters = [] } = useSubmittersQuery(Number(postId));
-  const markCompletedMutation = useMarkSubmitterCompletedMutation(Number(postId));
+  const id = Number(postId);
   const [statusTab, setStatusTab] = useState<StatusTab>('ALL');
-  const [openSubmitter, setOpenSubmitter] = useState<Submitter | null>(null);
+  const [openSubmissionId, setOpenSubmissionId] = useState<number | null>(null);
 
-  const submittedCount = submitters.filter((s) => s.status === 'SUBMITTED').length;
-  const completedCount = submitters.filter((s) => s.status === 'COMPLETED').length;
+  const { data } = useSubmittersQuery(id, {
+    status: statusTab === 'ALL' ? undefined : statusTab,
+  });
 
-  const filtered = useMemo(
-    () => submitters.filter((s) => statusTab === 'ALL' || s.status === statusTab),
-    [submitters, statusTab],
-  );
-
-  function handleMarkCompleted(submitterId: number) {
-    markCompletedMutation.mutate(submitterId);
-    setOpenSubmitter((prev) =>
-      prev && prev.id === submitterId ? { ...prev, status: 'COMPLETED' } : prev,
-    );
+  if (!data) {
+    return <div>불러오는 중이에요...</div>;
   }
 
-  if (!post) {
-    return <div>신청글을 찾을 수 없어요.</div>;
-  }
+  const { post, counts, content: submitters } = data;
 
   return (
     <>
@@ -58,22 +44,18 @@ export default function AdminSubmissionsPage() {
           </span>
         </div>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          {post.type === 'STUDY' ? '스터디' : '행사'} · 신청 기간 {post.periodStart} –{' '}
-          {post.periodEnd}
+          {post.type === 'STUDY' ? '스터디' : '행사'} · 신청 기간 {toDotDate(post.startDate)} –{' '}
+          {toDotDate(post.endDate)}
         </p>
 
-        <SubmissionStats
-          total={submitters.length}
-          submitted={submittedCount}
-          completed={completedCount}
-        />
+        <SubmissionStats total={counts.total} submitted={counts.submitted} completed={counts.completed} />
 
-        <div className="mt-8 flex gap-6 border-b border-border">
+        <div className="mt-8 flex gap-6 border-b border-hairline">
           {(
             [
-              ['ALL', `전체 ${submitters.length}`],
-              ['SUBMITTED', `제출됨 ${submittedCount}`],
-              ['COMPLETED', `참여 완료 ${completedCount}`],
+              ['ALL', `전체 ${counts.total}`],
+              ['SUBMITTED', `제출됨 ${counts.submitted}`],
+              ['COMPLETED', `참여 완료 ${counts.completed}`],
             ] as [StatusTab, string][]
           ).map(([tab, label]) => (
             <button
@@ -104,16 +86,16 @@ export default function AdminSubmissionsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length > 0 ? (
-              filtered.map((submitter) => (
+            {submitters.length > 0 ? (
+              submitters.map((submitter) => (
                 <TableRow
-                  key={submitter.id}
+                  key={submitter.submissionId}
                   className="cursor-pointer"
-                  onClick={() => setOpenSubmitter(submitter)}
+                  onClick={() => setOpenSubmissionId(submitter.submissionId)}
                 >
                   <TableCell className="font-medium">{submitter.name}</TableCell>
-                  <TableCell className="text-center">{submitter.studentId}</TableCell>
-                  <TableCell className="text-center">{submitter.submittedAt}</TableCell>
+                  <TableCell className="text-center">{submitter.studentNo}</TableCell>
+                  <TableCell className="text-center">{toDotDate(submitter.submittedAt)}</TableCell>
                   <TableCell className="text-center">
                     <span
                       className={cn(
@@ -144,10 +126,9 @@ export default function AdminSubmissionsPage() {
       </div>
 
       <SubmitterDetailDialog
-        submitter={openSubmitter}
-        questions={post.detail.questions}
-        onOpenChange={(open) => !open && setOpenSubmitter(null)}
-        onMarkCompleted={handleMarkCompleted}
+        postId={id}
+        submissionId={openSubmissionId}
+        onOpenChange={(open) => !open && setOpenSubmissionId(null)}
       />
     </>
   );

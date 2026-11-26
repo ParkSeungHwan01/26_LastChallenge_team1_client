@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApplyPost } from '../api/applyPosts.queries';
+import { useApplyPostQuery } from '../api/applyPosts.queries';
+import { useCancelSubmissionMutation } from '../api/form.queries';
 import { ApplyRecruitCard } from '../components/detail/ApplyRecruitCard';
 import { CancelApplicationDialog } from '../components/detail/CancelApplicationDialog';
 import { useAuth } from '@/features/auth/useAuth';
+import { toDotDate } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { ApplyPostType } from '../types';
 
@@ -11,19 +13,28 @@ const TYPE_LABEL: Record<ApplyPostType, string> = { STUDY: '스터디', EVENT: '
 
 export default function ApplyDetailPage() {
   const { postId } = useParams();
+  const id = Number(postId);
   const navigate = useNavigate();
   const { user, login } = useAuth();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const cancelMutation = useCancelSubmissionMutation(id);
 
-  const post = useApplyPost(Number(postId));
+  const { data: post, isLoading } = useApplyPostQuery(id);
+
+  if (isLoading) {
+    return <div className="p-10">불러오는 중이에요...</div>;
+  }
 
   if (!post) {
     return <div className="p-10">신청글을 찾을 수 없어요.</div>;
   }
 
-  const { detail } = post;
   const isClosed = post.status === 'CLOSED';
-  const hasApplied = Boolean(post.myApplication);
+  const hasApplied = Boolean(post.mySubmission);
+
+  function handleConfirmCancel() {
+    cancelMutation.mutate(undefined, { onSuccess: () => setCancelOpen(false) });
+  }
 
   return (
     <div className="flex flex-col items-center pb-[140px]">
@@ -56,7 +67,7 @@ export default function ApplyDetailPage() {
           </div>
           <h1 className="text-[36px] font-bold tracking-[-0.72px]">{post.title}</h1>
           <p className="text-sm text-ink-soft">
-            {detail.author} · {detail.createdAt}
+            {post.authorName} · {toDotDate(post.createdAt)} 등록
           </p>
         </div>
 
@@ -68,23 +79,9 @@ export default function ApplyDetailPage() {
               <h2 className="text-lg font-bold tracking-[-0.18px]">
                 {TYPE_LABEL[post.type]} 소개
               </h2>
-              <p className="text-[15px] leading-[1.75] text-ink">{detail.intro}</p>
-            </section>
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-bold tracking-[-0.18px]">진행 방식</h2>
-              <div className="text-[15px] leading-[1.75] text-ink">
-                {detail.process.map((line) => (
-                  <p key={line}>• {line}</p>
-                ))}
-              </div>
-            </section>
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-bold tracking-[-0.18px]">이런 분께 추천해요</h2>
-              <div className="text-[15px] leading-[1.75] text-ink">
-                {detail.recommend.map((line) => (
-                  <p key={line}>• {line}</p>
-                ))}
-              </div>
+              <p className="whitespace-pre-line text-[15px] leading-[1.75] text-ink">
+                {post.content}
+              </p>
             </section>
           </div>
 
@@ -101,8 +98,9 @@ export default function ApplyDetailPage() {
       <CancelApplicationDialog
         open={cancelOpen}
         postTitle={post.title}
+        pending={cancelMutation.isPending}
         onOpenChange={setCancelOpen}
-        onConfirm={() => setCancelOpen(false)}
+        onConfirm={handleConfirmCancel}
       />
     </div>
   );

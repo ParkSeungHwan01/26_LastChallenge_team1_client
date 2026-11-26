@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { AuthContext, type AuthUser } from './auth-context';
+import { AuthContext, MOCK_USERS, type AuthUser } from './auth-context';
 
-const MOCK_USER: AuthUser = { name: '박승환', isAdmin: true };
 const STORAGE_KEY = 'wink_mock_auth_user';
 
 function readStoredUser(): AuthUser | null {
@@ -32,9 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        login: () => {
-          setUser(MOCK_USER);
-          writeStoredUser(MOCK_USER);
+        login: (memberId = MOCK_USERS[0].memberId) => {
+          const nextUser = MOCK_USERS.find((candidate) => candidate.memberId === memberId);
+          if (!nextUser) return;
+          setUser(nextUser);
+          writeStoredUser(nextUser);
         },
         logout: () => {
           setUser(null);
