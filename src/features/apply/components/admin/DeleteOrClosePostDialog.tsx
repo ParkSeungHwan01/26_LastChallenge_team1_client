@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import type { ApplyPost } from '../../types';
+import type { AdminPostListItem } from '../../types';
 
 interface DeleteOrClosePostDialogProps {
-  post: ApplyPost | null;
+  post: AdminPostListItem | null;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
@@ -13,7 +13,7 @@ export function DeleteOrClosePostDialog({
   onOpenChange,
   onConfirm,
 }: DeleteOrClosePostDialogProps) {
-  const willCloseInstead = Boolean(post && post.applicantCount > 0);
+  const willCloseInstead = Boolean(post && post.submissionCount > 0);
 
   return (
     <Dialog open={Boolean(post)} onOpenChange={onOpenChange}>

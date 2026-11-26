@@ -2,57 +2,120 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/r
 import {
   closeApplyPost,
   createApplyPost,
+  fetchAdminApplyPost,
+  fetchAdminApplyPosts,
+  fetchApplyPost,
   fetchApplyPosts,
   removeApplyPost,
   updateApplyPost,
 } from './applyPosts.api';
-import type { ApplyPost } from '../types';
+import type {
+  ApplyPostCreateRequest,
+  ApplyPostStatus,
+  ApplyPostType,
+  ApplyPostUpdateRequest,
+} from '../types';
 
-const applyPostsKey = ['applyPosts'] as const;
+const applyPostsRoot = ['applyPosts'] as const;
 
-export const applyPostsQueryOptions = queryOptions({
-  queryKey: applyPostsKey,
-  queryFn: fetchApplyPosts,
-});
-
-export function useApplyPostsQuery() {
-  return useQuery(applyPostsQueryOptions);
+export function applyPostsQueryOptions(params: {
+  recruiting?: boolean;
+  type?: ApplyPostType;
+  page?: number;
+  size?: number;
+}) {
+  return queryOptions({
+    queryKey: [...applyPostsRoot, 'list', params] as const,
+    queryFn: () => fetchApplyPosts(params),
+  });
 }
 
-export function useApplyPost(id: number): ApplyPost | undefined {
-  const { data: posts } = useApplyPostsQuery();
-  return posts?.find((post) => post.id === id);
+export function useApplyPostsQuery(
+  params: {
+    recruiting?: boolean;
+    type?: ApplyPostType;
+    page?: number;
+    size?: number;
+  },
+  options: { enabled?: boolean } = {},
+) {
+  return useQuery({ ...applyPostsQueryOptions(params), enabled: options.enabled ?? true });
 }
 
-export function useAddApplyPostMutation() {
+export function applyPostQueryOptions(postId: number) {
+  return queryOptions({
+    queryKey: [...applyPostsRoot, 'detail', postId] as const,
+    queryFn: () => fetchApplyPost(postId),
+  });
+}
+
+export function useApplyPostQuery(postId: number) {
+  return useQuery(applyPostQueryOptions(postId));
+}
+
+export function adminApplyPostsQueryOptions(params: {
+  status?: ApplyPostStatus;
+  type?: ApplyPostType;
+  keyword?: string;
+  page?: number;
+  size?: number;
+}) {
+  return queryOptions({
+    queryKey: [...applyPostsRoot, 'admin', 'list', params] as const,
+    queryFn: () => fetchAdminApplyPosts(params),
+  });
+}
+
+export function useAdminApplyPostsQuery(params: {
+  status?: ApplyPostStatus;
+  type?: ApplyPostType;
+  keyword?: string;
+  page?: number;
+  size?: number;
+}) {
+  return useQuery(adminApplyPostsQueryOptions(params));
+}
+
+export function adminApplyPostQueryOptions(postId: number) {
+  return queryOptions({
+    queryKey: [...applyPostsRoot, 'admin', 'detail', postId] as const,
+    queryFn: () => fetchAdminApplyPost(postId),
+  });
+}
+
+export function useAdminApplyPostQuery(postId: number, options: { enabled?: boolean } = {}) {
+  return useQuery({ ...adminApplyPostQueryOptions(postId), enabled: options.enabled ?? true });
+}
+
+export function useCreateApplyPostMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createApplyPost,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsKey }),
+    mutationFn: (request: ApplyPostCreateRequest) => createApplyPost(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsRoot }),
   });
 }
 
 export function useUpdateApplyPostMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: number; patch: Partial<ApplyPost> }) =>
-      updateApplyPost(id, patch),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsKey }),
-  });
-}
-
-export function useCloseApplyPostMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: closeApplyPost,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsKey }),
+    mutationFn: ({ postId, request }: { postId: number; request: ApplyPostUpdateRequest }) =>
+      updateApplyPost(postId, request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsRoot }),
   });
 }
 
 export function useRemoveApplyPostMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: removeApplyPost,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsKey }),
+    mutationFn: (postId: number) => removeApplyPost(postId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsRoot }),
+  });
+}
+
+export function useCloseApplyPostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: number) => closeApplyPost(postId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applyPostsRoot }),
   });
 }

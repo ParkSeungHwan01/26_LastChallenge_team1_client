@@ -13,8 +13,8 @@ export function useQuestionDrafts(initialQuestions?: ApplyFormQuestion[]) {
       : [createEmptyDraft()],
   );
 
-  function updateQuestion(id: string, patch: Partial<QuestionDraft>) {
-    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  function updateQuestion(draftKey: string, patch: Partial<QuestionDraft>) {
+    setQuestions((prev) => prev.map((q) => (q.draftKey === draftKey ? { ...q, ...patch } : q)));
   }
 
   function moveQuestion(index: number, direction: -1 | 1) {
@@ -27,34 +27,41 @@ export function useQuestionDrafts(initialQuestions?: ApplyFormQuestion[]) {
     });
   }
 
-  function removeQuestion(id: string) {
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
+  function removeQuestion(draftKey: string) {
+    setQuestions((prev) => prev.filter((q) => q.draftKey !== draftKey));
   }
 
   function addQuestion() {
     setQuestions((prev) => [...prev, createEmptyDraft()]);
   }
 
-  function updateOption(questionId: string, optionIndex: number, value: string) {
+  function updateOption(draftKey: string, optionIndex: number, value: string) {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId
-          ? { ...q, options: q.options.map((option, i) => (i === optionIndex ? value : option)) }
+        q.draftKey === draftKey
+          ? {
+              ...q,
+              options: q.options.map((option, i) =>
+                i === optionIndex ? { ...option, content: value } : option,
+              ),
+            }
           : q,
       ),
     );
   }
 
-  function addOption(questionId: string) {
+  function addOption(draftKey: string) {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === questionId ? { ...q, options: [...q.options, ''] } : q)),
+      prev.map((q) =>
+        q.draftKey === draftKey ? { ...q, options: [...q.options, { id: null, content: '' }] } : q,
+      ),
     );
   }
 
-  function removeOption(questionId: string, optionIndex: number) {
+  function removeOption(draftKey: string, optionIndex: number) {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId
+        q.draftKey === draftKey
           ? { ...q, options: q.options.filter((_, i) => i !== optionIndex) }
           : q,
       ),

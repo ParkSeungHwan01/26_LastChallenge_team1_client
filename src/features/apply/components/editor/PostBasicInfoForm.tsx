@@ -6,6 +6,7 @@ import { FormRow } from './FormRow';
 
 interface PostBasicInfoFormProps {
   category: ApplyPostType;
+  categoryLocked?: boolean;
   onCategoryChange: (value: ApplyPostType) => void;
   title: string;
   onTitleChange: (value: string) => void;
@@ -21,6 +22,7 @@ interface PostBasicInfoFormProps {
 
 export function PostBasicInfoForm({
   category,
+  categoryLocked,
   onCategoryChange,
   title,
   onTitleChange,
@@ -38,20 +40,26 @@ export function PostBasicInfoForm({
       <h2 className="text-lg font-bold">기본 정보</h2>
 
       <FormRow label="구분" required>
-        <div className="flex overflow-hidden rounded-md border border-field-border">
-          {(['STUDY', 'EVENT'] as ApplyPostType[]).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onCategoryChange(value)}
-              className={cn(
-                'h-[46px] w-25 text-sm font-medium',
-                category === value ? 'bg-brand text-white' : 'bg-white text-ink',
-              )}
-            >
-              {value === 'STUDY' ? '스터디' : '행사'}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex overflow-hidden rounded-md border border-field-border">
+            {(['STUDY', 'EVENT'] as ApplyPostType[]).map((value) => (
+              <button
+                key={value}
+                type="button"
+                disabled={categoryLocked}
+                onClick={() => onCategoryChange(value)}
+                className={cn(
+                  'h-[46px] w-25 text-sm font-medium disabled:cursor-not-allowed',
+                  category === value ? 'bg-brand text-white' : 'bg-white text-ink',
+                )}
+              >
+                {value === 'STUDY' ? '스터디' : '행사'}
+              </button>
+            ))}
+          </div>
+          {categoryLocked && (
+            <p className="text-xs text-ink-soft">등록 후에는 구분을 바꿀 수 없어요</p>
+          )}
         </div>
       </FormRow>
 

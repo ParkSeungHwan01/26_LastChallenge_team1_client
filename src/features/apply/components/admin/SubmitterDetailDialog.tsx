@@ -1,23 +1,27 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { toDotDateTime } from '@/lib/date';
 import { cn } from '@/lib/utils';
-import type { ApplyFormQuestion, Submitter } from '../../types';
+import { useChangeSubmissionStatusMutation, useSubmissionDetailQuery } from '../../api/submitters.queries';
 
 interface SubmitterDetailDialogProps {
-  submitter: Submitter | null;
-  questions: ApplyFormQuestion[];
+  postId: number;
+  submissionId: number | null;
   onOpenChange: (open: boolean) => void;
-  onMarkCompleted: (submitterId: number) => void;
 }
 
 export function SubmitterDetailDialog({
-  submitter,
-  questions,
+  postId,
+  submissionId,
   onOpenChange,
-  onMarkCompleted,
 }: SubmitterDetailDialogProps) {
+  const { data: submitter } = useSubmissionDetailQuery(postId, submissionId ?? -1, {
+    enabled: submissionId !== null,
+  });
+  const changeStatusMutation = useChangeSubmissionStatusMutation(postId);
+
   return (
-    <Dialog open={Boolean(submitter)} onOpenChange={onOpenChange}>
+    <Dialog open={submissionId !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[560px] gap-0 p-9">
         {submitter && (
           <>
@@ -35,29 +39,36 @@ export function SubmitterDetailDialog({
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {submitter.studentId} · {submitter.submittedAtTime}
+              {submitter.studentNo} · {toDotDateTime(submitter.submittedAt)} 제출
             </p>
 
             <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
-              {questions.map((question, index) => {
-                const answer = submitter.answers.find((a) => a.questionId === question.id);
-                return (
-                  <div key={question.id}>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="mr-1.5 font-medium text-foreground">Q{index + 1}</span>
-                      {question.title}
-                    </p>
-                    <p className="mt-1.5 text-base">{answer?.value ?? '-'}</p>
-                  </div>
-                );
-              })}
+              {submitter.answers.map((answer, index) => (
+                <div key={answer.questionId}>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="mr-1.5 font-medium text-foreground">Q{index + 1}</span>
+                    {answer.content}
+                  </p>
+                  <p className="mt-1.5 text-base">
+                    {answer.text ??
+                      (answer.selectedOptions.length > 0
+                        ? answer.selectedOptions.map((option) => option.content).join(', ')
+                        : '-')}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
               <Button
                 variant="wink"
-                disabled={submitter.status === 'COMPLETED'}
-                onClick={() => onMarkCompleted(submitter.id)}
+                disabled={submitter.status === 'COMPLETED' || changeStatusMutation.isPending}
+                onClick={() =>
+                  changeStatusMutation.mutate({
+                    submissionId: submitter.submissionId,
+                    status: 'COMPLETED',
+                  })
+                }
               >
                 참여 완료로 변경
               </Button>

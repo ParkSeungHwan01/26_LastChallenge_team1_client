@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils';
+import { toDotDate } from '@/lib/date';
 import type { AuthUser } from '@/features/auth/auth-context';
-import type { ApplyPost, ApplyPostType } from '../../types';
+import type { ApplyPostDetail, ApplyPostType } from '../../types';
 
 const TYPE_LABEL: Record<ApplyPostType, string> = { STUDY: '스터디', EVENT: '행사' };
 
 interface ApplyRecruitCardProps {
-  post: ApplyPost;
+  post: ApplyPostDetail;
   user: AuthUser | null;
   onLogin: () => void;
   onWriteOrEdit: () => void;
@@ -20,7 +21,7 @@ export function ApplyRecruitCard({
   onCancelRequest,
 }: ApplyRecruitCardProps) {
   const isClosed = post.status === 'CLOSED';
-  const hasApplied = Boolean(post.myApplication);
+  const hasApplied = Boolean(post.mySubmission);
 
   return (
     <aside className="flex w-[380px] shrink-0 flex-col gap-5 rounded-md border border-hairline p-7">
@@ -31,7 +32,7 @@ export function ApplyRecruitCard({
       <div className="flex items-center justify-between text-sm">
         <span className="text-ink-soft">신청 기간</span>
         <span className="font-medium text-ink">
-          {post.periodStart} – {post.periodEnd}
+          {toDotDate(post.startDate)} – {toDotDate(post.endDate)}
         </span>
       </div>
       <div className="flex items-center justify-between">
@@ -89,7 +90,8 @@ export function ApplyRecruitCard({
             </button>
           </div>
           <p className="text-center text-[13px] text-ink-soft">
-            {post.myApplication?.appliedAt}에 신청했어요 · 마감 전까지 수정·취소할 수 있어요
+            {post.mySubmission && toDotDate(post.mySubmission.submittedAt.slice(0, 10))}에 신청했어요
+            · 마감 전까지 수정·취소할 수 있어요
           </p>
         </>
       ) : (

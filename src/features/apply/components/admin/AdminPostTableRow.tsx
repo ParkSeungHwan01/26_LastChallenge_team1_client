@@ -8,13 +8,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { toDotDate } from '@/lib/date';
 import { cn } from '@/lib/utils';
-import type { ApplyPost, ApplyPostType } from '../../types';
+import type { AdminPostListItem, ApplyPostType } from '../../types';
 
 const TYPE_LABEL: Record<ApplyPostType, string> = { STUDY: '스터디', EVENT: '행사' };
 
 interface AdminPostTableRowProps {
-  post: ApplyPost;
+  post: AdminPostListItem;
   onOpenSubmissions: () => void;
   onEdit: () => void;
   onClose: () => void;
@@ -30,11 +31,11 @@ export function AdminPostTableRow({
 }: AdminPostTableRowProps) {
   return (
     <TableRow className="cursor-pointer" onClick={onOpenSubmissions}>
-      <TableCell className="text-muted-foreground">{post.id}</TableCell>
+      <TableCell className="text-muted-foreground">{post.no}</TableCell>
       <TableCell className="text-muted-foreground">{TYPE_LABEL[post.type]}</TableCell>
       <TableCell className="font-medium">{post.title}</TableCell>
       <TableCell className="text-center">
-        {post.periodStart} – {post.periodEnd}
+        {toDotDate(post.startDate)} – {toDotDate(post.endDate)}
       </TableCell>
       <TableCell className="text-center">
         <span
@@ -46,7 +47,7 @@ export function AdminPostTableRow({
           {post.status === 'OPEN' ? '모집 중' : '마감'}
         </span>
       </TableCell>
-      <TableCell className="text-center">{post.applicantCount}명</TableCell>
+      <TableCell className="text-center">{post.submissionCount}명</TableCell>
       <TableCell className="text-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

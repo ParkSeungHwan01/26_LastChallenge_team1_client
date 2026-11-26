@@ -1,28 +1,36 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApplyPostsQuery } from '../api/applyPosts.queries';
+import { useMySubmissionsQuery } from '../api/mySubmissions.queries';
 import { ApplyEmptyState } from '../components/list/ApplyEmptyState';
 import { ApplyListHeaderRow } from '../components/list/ApplyListHeaderRow';
 import { ApplyListToolbar } from '../components/list/ApplyListToolbar';
 import { ApplyPagination } from '../components/list/ApplyPagination';
 import { ApplyPostRow } from '../components/list/ApplyPostRow';
 import { ApplyTabs } from '../components/list/ApplyTabs';
+import { MySubmissionRow } from '../components/list/MySubmissionRow';
 import { useAuth } from '@/features/auth/useAuth';
+
+const PAGE_SIZE = 10;
 
 export default function ApplyListPage() {
   const { user } = useAuth();
-  const { data: allApplyPosts = [] } = useApplyPostsQuery();
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [recruitingOnly, setRecruitingOnly] = useState(false);
+  const [page, setPage] = useState(0);
 
   const isMyTab = user !== null && searchParams.get('tab') === 'my';
 
-  const myPosts = allApplyPosts.filter((post) => post.myApplication);
-  const allPosts = recruitingOnly
-    ? allApplyPosts.filter((post) => post.status === 'OPEN')
-    : allApplyPosts;
-  const posts = isMyTab ? myPosts : allPosts;
+  const { data: allData } = useApplyPostsQuery(
+    { recruiting: recruitingOnly, page, size: PAGE_SIZE },
+    { enabled: !isMyTab },
+  );
+  const { data: myData } = useMySubmissionsQuery({ page, size: PAGE_SIZE }, { enabled: isMyTab });
+
+  const data = isMyTab ? myData : allData;
+  const posts = allData?.content ?? [];
+  const mySubmissions = myData?.content ?? [];
 
   function handleTabChange(tab: 'all' | 'my') {
     const next = new URLSearchParams(searchParams);
@@ -32,12 +40,18 @@ export default function ApplyListPage() {
       next.set('tab', 'my');
     }
     setSearchParams(next, { replace: true });
+    setPage(0);
+  }
+
+  function handleRecruitingOnlyChange(checked: boolean) {
+    setRecruitingOnly(checked);
+    setPage(0);
   }
 
   return (
     <div>
       <section className="flex h-[300px] flex-col items-center justify-center gap-2 bg-white">
-        <h1 className="text-[64px] leading-none font-black tracking-[-1.92px]">신청</h1>
+        <h1 className="text-[48px] leading-none font-black tracking-[-1.44px]">신청</h1>
         <p className="text-[24px] font-light text-ink">WINK의 스터디와 행사에 참여해보세요</p>
       </section>
 
@@ -46,27 +60,36 @@ export default function ApplyListPage() {
 
         <ApplyListToolbar
           isMyTab={isMyTab}
-          count={isMyTab ? myPosts.length : allPosts.length}
+          count={data?.totalElements ?? 0}
           recruitingOnly={recruitingOnly}
-          onRecruitingOnlyChange={setRecruitingOnly}
+          onRecruitingOnlyChange={handleRecruitingOnlyChange}
         />
 
         <ApplyListHeaderRow isMyTab={isMyTab} />
 
-        {posts.length === 0 ? (
-          <ApplyEmptyState onShowAll={() => handleTabChange('all')} />
+        {isMyTab ? (
+          mySubmissions.length === 0 ? (
+            <ApplyEmptyState onShowAll={() => handleTabChange('all')} />
+          ) : (
+            mySubmissions.map((submission) => (
+              <MySubmissionRow
+                key={submission.submissionId}
+                submission={submission}
+                onClick={() => navigate(`/apply/${submission.postId}`)}
+              />
+            ))
+          )
+        ) : posts.length === 0 ? (
+          <ApplyEmptyState onShowAll={() => handleRecruitingOnlyChange(false)} />
         ) : (
           posts.map((post) => (
-            <ApplyPostRow
-              key={post.id}
-              post={post}
-              isMyTab={isMyTab}
-              onClick={() => navigate(`/apply/${post.id}`)}
-            />
+            <ApplyPostRow key={post.id} post={post} onClick={() => navigate(`/apply/${post.id}`)} />
           ))
         )}
 
-        {posts.length > 0 && <ApplyPagination />}
+        {(data?.totalElements ?? 0) > 0 && (
+          <ApplyPagination page={page} totalPages={data?.totalPages ?? 1} onPageChange={setPage} />
+        )}
       </section>
     </div>
   );

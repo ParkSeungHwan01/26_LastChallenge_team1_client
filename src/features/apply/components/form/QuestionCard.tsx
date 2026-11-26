@@ -2,67 +2,71 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import type { ApplyFormQuestion } from '../../types';
+import type { AnswerState, ApplyFormQuestion } from '../../types';
 
 interface QuestionCardProps {
   index: number;
   question: ApplyFormQuestion;
-  value: string | string[] | undefined;
-  onChangeSingle: (value: string) => void;
-  onToggleMultiple: (option: string) => void;
+  answer: AnswerState | undefined;
+  onChangeSingle: (optionId: number) => void;
+  onToggleMultiple: (optionId: number) => void;
   onChangeText: (value: string) => void;
 }
 
 export function QuestionCard({
   index,
   question,
-  value,
+  answer,
   onChangeSingle,
   onToggleMultiple,
   onChangeText,
 }: QuestionCardProps) {
-  const textValue = typeof value === 'string' ? value : '';
-  const selectedOptions = Array.isArray(value) ? value : [];
+  const selectedOptionIds = answer?.optionIds ?? [];
+  const textValue = answer?.text ?? '';
 
   return (
     <div className="flex w-full flex-col gap-4 rounded-md border border-hairline p-7">
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-brand">Q{index + 1}</span>
-          <span className="text-base font-bold tracking-[-0.16px]">{question.title}</span>
+          <span className="text-base font-bold tracking-[-0.16px]">{question.content}</span>
         </div>
         {question.description && (
           <p className="text-[13px] text-ink-soft">{question.description}</p>
         )}
       </div>
 
-      {question.type === 'SINGLE_CHOICE' && (
-        <RadioGroup value={textValue} onValueChange={onChangeSingle} className="gap-3">
-          {question.options?.map((option) => (
-            <label key={option} className="flex items-center gap-2.5 text-sm text-ink">
-              <RadioGroupItem value={option} className="size-[18px]" />
-              {option}
+      {question.type === 'SINGLE' && (
+        <RadioGroup
+          value={selectedOptionIds[0] !== undefined ? String(selectedOptionIds[0]) : ''}
+          onValueChange={(value) => onChangeSingle(Number(value))}
+          className="gap-3"
+        >
+          {question.options.map((option) => (
+            <label key={option.id} className="flex items-center gap-2.5 text-sm text-ink">
+              <RadioGroupItem value={String(option.id)} className="size-[18px]" />
+              {option.content}
             </label>
           ))}
         </RadioGroup>
       )}
 
-      {question.type === 'MULTIPLE_CHOICE' && (
+      {question.type === 'MULTI' && (
         <div className="flex flex-col gap-3">
-          {question.options?.map((option) => (
-            <label key={option} className="flex items-center gap-2.5 text-sm text-ink">
+          {question.options.map((option) => (
+            <label key={option.id} className="flex items-center gap-2.5 text-sm text-ink">
               <Checkbox
-                checked={selectedOptions.includes(option)}
-                onCheckedChange={() => onToggleMultiple(option)}
+                checked={option.id !== null && selectedOptionIds.includes(option.id)}
+                onCheckedChange={() => option.id !== null && onToggleMultiple(option.id)}
                 className="size-[18px]"
               />
-              {option}
+              {option.content}
             </label>
           ))}
         </div>
       )}
 
-      {question.type === 'SHORT_TEXT' && (
+      {question.type === 'SHORT' && (
         <Input
           value={textValue}
           onChange={(event) => onChangeText(event.target.value)}
@@ -71,7 +75,7 @@ export function QuestionCard({
         />
       )}
 
-      {question.type === 'LONG_TEXT' && (
+      {question.type === 'LONG' && (
         <div className="flex flex-col gap-1">
           <Textarea
             value={textValue}

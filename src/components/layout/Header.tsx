@@ -8,10 +8,14 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/features/auth/useAuth';
+import { MOCK_USERS } from '@/features/auth/auth-context';
 import winkLogo from '@/assets/wink-logo.png';
 import { getMenuItems } from './header-items';
 import { NavItem } from './NavItem';
@@ -49,6 +53,21 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuLabel>테스트 계정 전환</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={String(user.memberId)}
+                onValueChange={(value) => login(Number(value))}
+              >
+                {MOCK_USERS.map((mockUser) => (
+                  <DropdownMenuRadioItem key={mockUser.memberId} value={String(mockUser.memberId)}>
+                    {mockUser.name}
+                    {mockUser.isAdmin && (
+                      <span className="text-xs text-muted-foreground">(관리자)</span>
+                    )}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem onSelect={notImplemented}>
                   <UserPen />내 정보 수정
@@ -78,9 +97,29 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="ghost" className="rounded-lg" onClick={login}>
-            Login
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="rounded-lg">
+                Login
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                {MOCK_USERS.map((mockUser) => (
+                  <DropdownMenuItem
+                    key={mockUser.memberId}
+                    onSelect={() => login(mockUser.memberId)}
+                  >
+                    <UserIcon />
+                    {mockUser.name}
+                    {mockUser.isAdmin && (
+                      <span className="text-xs text-muted-foreground">(관리자)</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </nav>
     </header>

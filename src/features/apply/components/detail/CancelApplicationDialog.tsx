@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 interface CancelApplicationDialogProps {
   open: boolean;
   postTitle: string;
+  pending?: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
@@ -10,6 +11,7 @@ interface CancelApplicationDialogProps {
 export function CancelApplicationDialog({
   open,
   postTitle,
+  pending,
   onOpenChange,
   onConfirm,
 }: CancelApplicationDialogProps) {
@@ -37,7 +39,8 @@ export function CancelApplicationDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="h-[52px] flex-1 rounded bg-danger text-[15px] font-bold text-white"
+            disabled={pending}
+            className="h-[52px] flex-1 rounded bg-danger text-[15px] font-bold text-white disabled:opacity-60"
           >
             신청 취소
           </button>
