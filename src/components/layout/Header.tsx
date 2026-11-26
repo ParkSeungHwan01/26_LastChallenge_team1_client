@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/features/auth/useAuth';
 import winkLogo from '@/assets/wink-logo.png';
 import { getMenuItems } from './header-items';
 import { NavItem } from './NavItem';

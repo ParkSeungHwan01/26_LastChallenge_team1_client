@@ -43,3 +43,18 @@ export interface ApplyPost {
   myApplication?: MyApplication;
   detail: ApplyPostDetail;
 }
+
+export interface SubmitterAnswer {
+  questionId: string;
+  value: string;
+}
+
+export interface Submitter {
+  id: number;
+  name: string;
+  studentId: string;
+  submittedAt: string;
+  submittedAtTime: string;
+  status: MyApplicationStatus;
+  answers: SubmitterAnswer[];
+}

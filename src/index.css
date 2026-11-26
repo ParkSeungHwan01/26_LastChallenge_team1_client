@@ -122,6 +122,17 @@
   --color-wink-800: #1d3680;
   --color-wink-900: #14234d;
 
+  /* Apply 기능 전용 토큰 (Figma에서 뽑아낸 반복 색상들을 재사용 가능하게 묶음) */
+  --color-ink: #333333;
+  --color-ink-soft: #7f7f7f;
+  --color-hairline: #e8e8e8;
+  --color-field-border: #d9dce1;
+  --color-control-outline: #c9ccd1;
+  --color-placeholder: #a9aeb6;
+  --color-chip: #e4ebff;
+  --color-chip-soft: #eef3ff;
+  --color-danger: #e5484d;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

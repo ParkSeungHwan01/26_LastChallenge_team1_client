@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/lib/auth-context';
+import type { AuthUser } from '@/features/auth/auth-context';
 import type { NavItemType } from './NavItem';
 
 const DEFAULT_NAV_ITEMS: NavItemType[] = [

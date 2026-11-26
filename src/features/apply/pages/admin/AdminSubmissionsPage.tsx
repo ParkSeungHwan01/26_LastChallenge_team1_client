@@ -1,23 +1,24 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { AdminBreadcrumb } from '@/components/layout/AdminBreadcrumb';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useApplyPost } from '../../api/applyPosts.queries';
+import {
+  useMarkSubmitterCompletedMutation,
+  useSubmittersQuery,
+} from '../../api/submitters.queries';
+import { AdminBreadcrumb } from '../../components/AdminBreadcrumb';
+import { SubmissionStats } from '../../components/admin/SubmissionStats';
+import { SubmitterDetailDialog } from '../../components/admin/SubmitterDetailDialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useApplyPosts } from '@/hooks/useApplyPosts';
 import { cn } from '@/lib/utils';
-import { getSubmittersByPostId } from '@/mocks/adminSubmissions';
-import type { Submitter } from '@/types/admin';
+import type { Submitter } from '../../types';
 
 type StatusTab = 'ALL' | 'SUBMITTED' | 'COMPLETED';
 
 export default function AdminSubmissionsPage() {
   const { postId } = useParams();
-  const { posts } = useApplyPosts();
-  const post = posts.find((item) => item.id === Number(postId));
-  const [submitters, setSubmitters] = useState<Submitter[]>(
-    getSubmittersByPostId(Number(postId)),
-  );
+  const post = useApplyPost(Number(postId));
+  const { data: submitters = [] } = useSubmittersQuery(Number(postId));
+  const markCompletedMutation = useMarkSubmitterCompletedMutation(Number(postId));
   const [statusTab, setStatusTab] = useState<StatusTab>('ALL');
   const [openSubmitter, setOpenSubmitter] = useState<Submitter | null>(null);
 
@@ -29,10 +30,8 @@ export default function AdminSubmissionsPage() {
     [submitters, statusTab],
   );
 
-  function markCompleted(submitterId: number) {
-    setSubmitters((prev) =>
-      prev.map((s) => (s.id === submitterId ? { ...s, status: 'COMPLETED' } : s)),
-    );
+  function handleMarkCompleted(submitterId: number) {
+    markCompletedMutation.mutate(submitterId);
     setOpenSubmitter((prev) =>
       prev && prev.id === submitterId ? { ...prev, status: 'COMPLETED' } : prev,
     );
@@ -63,11 +62,11 @@ export default function AdminSubmissionsPage() {
           {post.periodEnd}
         </p>
 
-        <div className="mt-8 flex divide-x divide-border rounded-md border border-border">
-          <StatCard label="전체 제출" value={submitters.length} />
-          <StatCard label="제출됨" value={submittedCount} />
-          <StatCard label="참여 완료" value={completedCount} />
-        </div>
+        <SubmissionStats
+          total={submitters.length}
+          submitted={submittedCount}
+          completed={completedCount}
+        />
 
         <div className="mt-8 flex gap-6 border-b border-border">
           {(
@@ -144,67 +143,12 @@ export default function AdminSubmissionsPage() {
         </p>
       </div>
 
-      <Dialog open={Boolean(openSubmitter)} onOpenChange={(open) => !open && setOpenSubmitter(null)}>
-        <DialogContent className="max-w-[560px] gap-0 p-9">
-          {openSubmitter && (
-            <>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-xl font-bold">{openSubmitter.name}</DialogTitle>
-                <span
-                  className={cn(
-                    'rounded px-2.5 py-[3px] text-xs font-medium',
-                    openSubmitter.status === 'COMPLETED'
-                      ? 'bg-brand text-white'
-                      : 'bg-wink-50 text-brand',
-                  )}
-                >
-                  {openSubmitter.status === 'COMPLETED' ? '참여 완료' : '제출됨'}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {openSubmitter.studentId} · {openSubmitter.submittedAtTime}
-              </p>
-
-              <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
-                {post.detail.questions.map((question, index) => {
-                  const answer = openSubmitter.answers.find((a) => a.questionId === question.id);
-                  return (
-                    <div key={question.id}>
-                      <p className="text-sm text-muted-foreground">
-                        <span className="mr-1.5 font-medium text-foreground">Q{index + 1}</span>
-                        {question.title}
-                      </p>
-                      <p className="mt-1.5 text-base">{answer?.value ?? '-'}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 flex flex-col gap-2 border-t border-border pt-6">
-                <Button
-                  variant="wink"
-                  disabled={openSubmitter.status === 'COMPLETED'}
-                  onClick={() => markCompleted(openSubmitter.id)}
-                >
-                  참여 완료로 변경
-                </Button>
-                <p className="text-center text-xs text-muted-foreground">
-                  활동이 끝나면 참여 완료로 바꿔주세요 (뱃지 지급 기준)
-                </p>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <SubmitterDetailDialog
+        submitter={openSubmitter}
+        questions={post.detail.questions}
+        onOpenChange={(open) => !open && setOpenSubmitter(null)}
+        onMarkCompleted={handleMarkCompleted}
+      />
     </>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex flex-1 flex-col gap-1 p-6">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-3xl font-bold">{value}명</span>
-    </div>
   );
 }

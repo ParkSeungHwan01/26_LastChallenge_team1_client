@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { AuthContext, type AuthUser } from '@/lib/auth-context';
+import { AuthContext, type AuthUser } from './auth-context';
 
 const MOCK_USER: AuthUser = { name: '박승환', isAdmin: true };
 const STORAGE_KEY = 'wink_mock_auth_user';

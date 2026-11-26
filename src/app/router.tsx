@@ -1,12 +1,12 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { MainLayout } from '@/components/layout/MainLayout';
-import AdminPostEditorPage from '@/pages/admin/AdminPostEditorPage';
-import AdminPostListPage from '@/pages/admin/AdminPostListPage';
-import AdminSubmissionsPage from '@/pages/admin/AdminSubmissionsPage';
-import ApplyDetailPage from '@/pages/apply/ApplyDetailPage';
-import ApplyFormPage from '@/pages/apply/ApplyFormPage';
-import ApplyListPage from '@/pages/apply/ApplyListPage';
+import AdminPostEditorPage from '@/features/apply/pages/admin/AdminPostEditorPage';
+import AdminPostListPage from '@/features/apply/pages/admin/AdminPostListPage';
+import AdminSubmissionsPage from '@/features/apply/pages/admin/AdminSubmissionsPage';
+import ApplyDetailPage from '@/features/apply/pages/ApplyDetailPage';
+import ApplyFormPage from '@/features/apply/pages/ApplyFormPage';
+import ApplyListPage from '@/features/apply/pages/ApplyListPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 
 export const router = createBrowserRouter([
