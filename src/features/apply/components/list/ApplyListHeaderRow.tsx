@@ -4,7 +4,7 @@ interface ApplyListHeaderRowProps {
 
 export function ApplyListHeaderRow({ isMyTab }: ApplyListHeaderRowProps) {
   return (
-    <div className="mt-5 flex h-12 items-center gap-4 whitespace-nowrap border-t border-ink border-b border-hairline text-[13px] text-ink-soft">
+    <div className="mt-5 flex h-12 items-center gap-4 whitespace-nowrap border-t border-b border-hairline text-[13px] text-ink-soft">
       <span className="w-16 pl-4">번호</span>
       <span className="w-17">구분</span>
       <span className="flex-1">제목</span>
