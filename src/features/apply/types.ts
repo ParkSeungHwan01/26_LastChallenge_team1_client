@@ -232,16 +232,17 @@ export interface SubmissionDetail {
   answers: AnswerDetail[];
 }
 
-// MY 신청 탭 (백엔드에 아직 없음 — GET /api/submissions/me 추가 예정)
+// MY 신청 탭 (SUB-04, GET /api/submissions/me)
 export interface MySubmissionListItem {
   no: number;
   postId: number;
   type: ApplyPostType;
   title: string;
+  summary: string | null;
   postStatus: ApplyPostStatus; // 신청글 자체의 모집 상태 (마감 뱃지 표시용)
-  submissionId: number;
-  status: SubmissionStatus; // 내 신청 상태 (제출됨 / 참여 완료)
+  dDay: number | null;
   submittedAt: string; // ISO date
+  myStatus: SubmissionStatus; // 내 신청 상태 (제출됨 / 참여 완료)
 }
 
 // 신청서 작성 화면에서 쓰는 답변 입력 상태 (questionId별)
