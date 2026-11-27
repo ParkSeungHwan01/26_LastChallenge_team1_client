@@ -42,7 +42,7 @@ export default function AdminPostListPage() {
   });
   const posts = data?.content ?? [];
 
-  const { data: allForCounts } = useAdminApplyPostsQuery({ size: 1000 });
+  const { data: allForCounts } = useAdminApplyPostsQuery({ size: 100 });
   const openCount = allForCounts?.content.filter((p) => p.status === 'OPEN').length ?? 0;
   const closedCount = allForCounts?.content.filter((p) => p.status === 'CLOSED').length ?? 0;
 
